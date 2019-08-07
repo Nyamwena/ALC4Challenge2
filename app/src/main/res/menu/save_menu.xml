@@ -6,7 +6,13 @@
         app:showAsAction="ifRoom">
     </item>
     <item android:id="@+id/deleteDeal"
-        android:title="@string/insert_new_deal"
+        android:title="@string/delete_deal"
+        app:showAsAction="never">
+
+    </item>
+
+    <item android:id="@+id/editDeal"
+        android:title="@string/edit_delete"
         app:showAsAction="never">
 
     </item>

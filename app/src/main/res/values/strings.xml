@@ -7,4 +7,6 @@
     <string name="logout">Logout</string>
     <string name="insert_new_deal">Insert New Deal</string>
     <string name="upload_image">Upload Image</string>
+    <string name="edit_delete">Edit Delete</string>
+    <string name="delete_deal">Delete Deal</string>
 </resources>

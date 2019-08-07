@@ -5,6 +5,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.content.res.Resources;
+import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,8 +16,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.firebase.ui.auth.data.model.Resource;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -25,6 +29,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.squareup.picasso.Picasso;
 
 public class MainActivity extends AppCompatActivity {
     EditText eTitle;
@@ -35,6 +40,9 @@ public class MainActivity extends AppCompatActivity {
     private StorageReference mStorageReference;
     private ActivityList activityList;
     private static final int PICTURE_RESULTS = 42;
+    String photoStringLink;
+    ImageView imageView;
+    TravelDeal deal = new TravelDeal();
 
 
 
@@ -50,7 +58,20 @@ public class MainActivity extends AppCompatActivity {
         eTitle = findViewById(R.id.myTitle);
         eDescription = findViewById(R.id.txtDiscription);
         ePrice = findViewById(R.id.myPrice);
+        Intent intent = getIntent();
+        TravelDeal deal = (TravelDeal) intent.getSerializableExtra("Deal");
+        if(deal == null){
+            deal = new TravelDeal();
+        }
+        this.deal = deal;
+        eTitle.setText(deal.getTitle());
+        eDescription.setText(deal.getDescription());
+        ePrice.setText(deal.getPrice());
+
+
         Button btnImage = findViewById(R.id.imageBtn);
+        imageView = findViewById(R.id.myImage);
+        showImage(deal.getImageUrl());
         btnImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -70,7 +91,19 @@ public class MainActivity extends AppCompatActivity {
                 saveDeal();
                 Toast.makeText(this, "Deal Save", Toast.LENGTH_LONG).show();
                 clean();
+                backToList();
                 return  true;
+
+            case R.id.deleteDeal:
+                deleteDeal();
+                Toast.makeText(this, "Deal deleted", Toast.LENGTH_LONG).show();
+                clean();
+                backToList();
+            case R.id.editDeal:
+                editDeal();
+                Toast.makeText(this, "Deal edited", Toast.LENGTH_LONG).show();
+                clean();
+                backToList();
             default:
                 return super.onOptionsItemSelected(item);
 
@@ -85,10 +118,12 @@ public class MainActivity extends AppCompatActivity {
         if(FirebaseUtil.isAdmin){
             menu.findItem(R.id.save_menu).setVisible(true);
             menu.findItem(R.id.deleteDeal).setVisible(true);
+            menu.findItem(R.id.editDeal).setVisible(true);
             enableEditText(true);
         } else {
             menu.findItem(R.id.insertDeal).setVisible(false);
             menu.findItem(R.id.deleteDeal).setVisible(false);
+            menu.findItem(R.id.editDeal).setVisible(false);
             enableEditText(false);
         }
 
@@ -121,13 +156,14 @@ public class MainActivity extends AppCompatActivity {
                 public void onComplete(@NonNull Task<Uri> task) {
                     if (task.isSuccessful()) {
                         Uri downloadUri = task.getResult();
-                        System.out.println("Upload " + downloadUri);
+                       // System.out.println("Upload " + downloadUri);
                        // Toast.makeText(mActivity, "Successfully uploaded", Toast.LENGTH_SHORT).show();
                         if (downloadUri != null) {
 
-                            String photoStringLink = downloadUri.toString(); //YOU WILL GET THE DOWNLOAD URL HERE !!!!
-                            TravelDeal deal = new TravelDeal("","","","");
+                             photoStringLink = downloadUri.toString(); //YOU WILL GET THE DOWNLOAD URL HERE !!!!
+                            TravelDeal deal = new TravelDeal("","","", photoStringLink);
                             deal.setImageUrl(photoStringLink);
+                            showImage(photoStringLink);
                             Log.d("Image Link", deal.getImageUrl());
                             System.out.println("Upload " + photoStringLink);
 
@@ -145,9 +181,36 @@ public class MainActivity extends AppCompatActivity {
         String description = eDescription.getText().toString();
         String id = "";
 
-        TravelDeal deal = new TravelDeal(title, price, description, "");
-        mDatabaseReference.push().setValue(deal);
+        if (deal.getId() == null){
+            TravelDeal deal = new TravelDeal(title, price, description, photoStringLink);
+            mDatabaseReference.push().setValue(deal);
+        }
+
     }
+
+    private void editDeal(){
+        deal.setTitle(eTitle.getText().toString());
+        deal.setDescription(eDescription.getText().toString());
+        deal.setPrice(ePrice.getText().toString());
+        if(deal.getId() != null){
+            mDatabaseReference.child(deal.getId()).setValue(deal);
+        }
+
+    }
+
+    private void deleteDeal(){
+        if (deal == null){
+            Toast.makeText(this, "Please save the deal before deleting", Toast.LENGTH_LONG).show();
+            return;
+        }
+        mDatabaseReference.child(deal.getId()).removeValue();
+    }
+
+    private void backToList(){
+        Intent inten = new Intent(this , ActivityList.class);
+        startActivity(inten);
+    }
+
 
     private void clean(){
         ePrice.setText("");
@@ -160,5 +223,16 @@ public class MainActivity extends AppCompatActivity {
         eDescription.setEnabled(isEnabled);
         ePrice.setEnabled(isEnabled);
         eTitle.setEnabled(isEnabled);
+    }
+
+    private void showImage(String url){
+        if (url != null && url.isEmpty() == false){
+            int width = Resources.getSystem().getDisplayMetrics().widthPixels;
+            Picasso.with(this)
+                    .load(url)
+                    .resize(width, width*2/3 )
+                    .centerCrop()
+                    .into(imageView);
+        }
     }
 }

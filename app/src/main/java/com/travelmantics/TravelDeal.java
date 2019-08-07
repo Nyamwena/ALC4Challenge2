@@ -1,6 +1,8 @@
 package com.travelmantics;
 
-public class TravelDeal {
+import java.io.Serializable;
+
+public class TravelDeal implements Serializable {
     private String id;
     private String title;
     private String price;
@@ -10,7 +12,7 @@ public class TravelDeal {
     public  TravelDeal(){}
 
     public TravelDeal(  String title, String price, String description, String imageUrl) {
-       this.setId(id);
+      this.setId(id);
         this.setTitle(title);
         this.setPrice(price);
         this.setDescription(description);
